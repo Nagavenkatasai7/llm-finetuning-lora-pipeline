@@ -1,0 +1,75 @@
+# LoRA/QLoRA Fine-tuning Configuration
+# =====================================
+# This config file controls all aspects of the fine-tuning pipeline.
+# Adjust parameters based on your hardware and use case.
+
+# Model Configuration
+model:
+  name: "meta-llama/Llama-3.2-1B"  # Base model to fine-tune
+  trust_remote_code: true
+  torch_dtype: "float16"           # float16 for LoRA, bfloat16 if supported
+
+# Quantization (QLoRA)
+quantization:
+  enabled: true                    # Set false for standard LoRA
+  bits: 4                          # 4-bit quantization for QLoRA
+  quant_type: "nf4"               # nf4 (NormalFloat4) recommended
+  double_quant: true               # Nested quantization for memory savings
+  compute_dtype: "float16"
+
+# LoRA Configuration
+lora:
+  r: 16                           # LoRA rank (8-64 typical)
+  lora_alpha: 32                  # LoRA alpha (usually 2x rank)
+  lora_dropout: 0.05              # Dropout for regularization
+  bias: "none"                    # "none", "all", or "lora_only"
+  target_modules:                  # Modules to apply LoRA to
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  task_type: "CAUSAL_LM"
+
+# Dataset Configuration
+dataset:
+  name: "sample"                   # Dataset name or path
+  text_column: "text"              # Column containing text data
+  max_seq_length: 512              # Maximum sequence length
+  train_split: 0.9                 # Train/validation split ratio
+  seed: 42
+
+# Training Configuration
+training:
+  output_dir: "./outputs"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine"
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  save_total_limit: 3
+  fp16: true
+  bf16: false
+  max_grad_norm: 0.3
+  optim: "paged_adamw_32bit"
+  group_by_length: true
+  report_to: "none"
+
+# Evaluation Configuration
+evaluation:
+  metrics:
+    - "perplexity"
+    - "rouge"
+    - "bleu"
+  num_samples: 100                 # Samples for evaluation
+  generation_max_length: 256
+  temperature: 0.7
+  top_p: 0.9
